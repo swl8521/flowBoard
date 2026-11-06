@@ -20,9 +20,16 @@ export default function WorkspaceList({ workspaces }: WorkspaceListProps) {
     setSelectedWorkspace(workspace);
   }
 
+  function isFilterRole(value: string): value is FilterRole {
+    return filterRoles.includes(value as FilterRole);
+  }
+
   function handleChange(e: React.ChangeEvent<HTMLSelectElement>) {
-    setFilterRole(e.currentTarget.value as FilterRole);
-    setSelectedWorkspace(null);
+    const value = e.currentTarget.value;
+    if (isFilterRole(value)) {
+      setFilterRole(value);
+      setSelectedWorkspace(null);
+    }
   }
 
   return (
