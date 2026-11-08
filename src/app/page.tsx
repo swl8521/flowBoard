@@ -1,4 +1,3 @@
-import { workspaces } from "@/types/workspace";
 import WorkspaceList from "@/components/WorkspaceList";
 
 export default function Home() {
@@ -6,7 +5,7 @@ export default function Home() {
     <div>
       <div>FlowBoard</div>
 
-      <WorkspaceList workspaces={workspaces} />
+      <WorkspaceList />
     </div>
   );
 }

@@ -1,17 +1,21 @@
 "use client";
 
 import type { Workspace, RoleType } from "@/types/workspace";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import WorkspaceItem from "@/components/WorkspaceItem";
 
 type FilterRole = RoleType | "ALL";
 
-interface WorkspaceListProps {
+interface WorkspaceResponse {
   workspaces: Workspace[];
 }
 
-export default function WorkspaceList({ workspaces }: WorkspaceListProps) {
-  const [workspaceList, setWorkspaceList] = useState<Workspace[]>(workspaces);
+interface CreateWorkspaceResponse {
+  workspace: Workspace;
+}
+
+export default function WorkspaceList() {
+  const [workspaceList, setWorkspaceList] = useState<Workspace[]>([]);
 
   const [selectedWorkspace, setSelectedWorkspace] = useState<Workspace | null>(null);
   const [filterRole, setFilterRole] = useState<FilterRole>("ALL");
@@ -21,16 +25,54 @@ export default function WorkspaceList({ workspaces }: WorkspaceListProps) {
   const [workspaceRole, setWorkspaceRole] = useState<RoleType>("MEMBER");
 
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [apiErrorMessage, setApiErrorMessage] = useState<string>("");
+
+  useEffect(() => {
+    async function fetchWorkspaces() {
+      setIsLoading(true);
+      setApiErrorMessage("");
+
+      try {
+        const response = await fetch("/api/workspaces");
+        if (!response.ok) {
+          throw new Error("Failed to fetch workspaces");
+        }
+
+        const data: WorkspaceResponse = await response.json();
+        setWorkspaceList(data.workspaces);
+      } catch {
+        setApiErrorMessage("워크스페이스를 불러오지 못했습니다.");
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    fetchWorkspaces();
+  }, []);
 
   function handleSelect(workspace: Workspace) {
     setSelectedWorkspace(workspace);
   }
 
-  function handleDelete(workspace: Workspace) {
-    setWorkspaceList(prev => prev.filter((w) => w.id !== workspace.id));
+  async function handleDelete(workspace: Workspace) {
+    setApiErrorMessage("");
 
-    if (selectedWorkspace?.id === workspace.id) {
-      setSelectedWorkspace(null);
+    try {
+      const response = await fetch(`/api/workspaces/${workspace.id}`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to delete workspace");
+      }
+
+      setWorkspaceList(prev => prev.filter((w) => w.id !== workspace.id));
+      if (selectedWorkspace?.id === workspace.id) {
+        setSelectedWorkspace(null);
+      }
+    } catch {
+      setApiErrorMessage("워크스페이스를 삭제하지 못했습니다.");
     }
   }
 
@@ -66,7 +108,7 @@ export default function WorkspaceList({ workspaces }: WorkspaceListProps) {
     }
   }
 
-  function handleSubmit(
+  async function handleSubmit(
     e: React.SubmitEvent<HTMLFormElement>
   ) {
     e.preventDefault();
@@ -85,18 +127,30 @@ export default function WorkspaceList({ workspaces }: WorkspaceListProps) {
 
     setErrorMessage(null);
 
-    const newWorkspace: Workspace = {
-      id: Date.now(),
-      name,
-      role: workspaceRole,
-      createdAt: "2026-11-07",
-    };
+    try {
+      const response = await fetch("/api/workspaces", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ name, role: workspaceRole }),
+      });
 
-    console.log(newWorkspace);
+      if (!response.ok) {
+        throw new Error("Failed to create workspace");
+      }
 
-    setWorkspaceList(prev => [...prev, newWorkspace]);
-    setWorkspaceName("");
-    setWorkspaceRole("MEMBER");
+      const data: CreateWorkspaceResponse = await response.json();
+      setWorkspaceList(prev => [
+        ...prev,
+        data.workspace,
+      ]);
+
+      setWorkspaceName("");
+      setWorkspaceRole("MEMBER");
+    } catch {
+      setApiErrorMessage("워크스페이스 생성에 실패했습니다.");
+    }
   }
 
   return (
@@ -116,6 +170,18 @@ export default function WorkspaceList({ workspaces }: WorkspaceListProps) {
         errorMessage && (
           <div style={{ color: "red" }}>
             {errorMessage}
+          </div>
+        )
+      }
+      {
+        isLoading && (
+          <div>워크스페이스 불러오는 중...</div>
+        )
+      }
+      {
+        apiErrorMessage && (
+          <div style={{ color: "red" }}>
+            {apiErrorMessage}
           </div>
         )
       }
