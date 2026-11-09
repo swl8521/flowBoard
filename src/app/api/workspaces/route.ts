@@ -1,7 +1,9 @@
-import { workspaces } from "@/types/workspace";
 import type { RoleType, Workspace } from "@/types/workspace";
+import prisma from "@/lib/prisma";
 
 export async function GET() {
+  const workspaces = await prisma.workspace.findMany();
+
   return Response.json({ workspaces });
 }
 
@@ -11,18 +13,15 @@ function isRoleType(value: unknown): value is RoleType {
 
 export async function POST(request: Request) {
   const body = await request.json();
-  console.log(body);
-
   const name = typeof body.name === "string" ? body.name.trim() : "";
 
   if (name !== "" && isRoleType(body.role)) {
-
-    const newWorkspace: Workspace = {
-      id: Date.now(),
-      name,
-      role: body.role,
-      createdAt: new Date().toISOString().split("T")[0],
-    };
+    const newWorkspace = await prisma.workspace.create({
+      data: {
+        name: name,
+        role: body.role,
+      }
+    });
 
     return Response.json(
       { workspace: newWorkspace },

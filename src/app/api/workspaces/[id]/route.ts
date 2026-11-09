@@ -1,7 +1,7 @@
-import { workspaces } from "@/types/workspace";
+import prisma from "@/lib/prisma";
 
 export async function DELETE(
-  request: Request,
+  _request: Request, // _ 아직 미사용이라는 뜻
   context: { params: Promise<{ id: string }> }
 ) {
   const { id } = await context.params;
@@ -14,7 +14,11 @@ export async function DELETE(
     );
   }
 
-  const workspace = workspaces.find((workspace) => workspace.id === workspaceId);
+  const workspace = await prisma.workspace.findUnique({
+    where: {
+      id: workspaceId
+    }
+  });
 
   if (!workspace) {
     return Response.json(
@@ -23,8 +27,11 @@ export async function DELETE(
     );
   }
 
-  console.log(workspace);
-  const updatedWorkspaces = workspaces.filter((workspace) => workspace.id !== workspaceId);
+  await prisma.workspace.delete({
+    where: {
+      id: workspace.id
+    }
+  });
 
   return Response.json({
     message: "워크스페이스가 삭제되었습니다.",
