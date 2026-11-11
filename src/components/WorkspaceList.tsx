@@ -14,6 +14,10 @@ interface CreateWorkspaceResponse {
   workspace: Workspace;
 }
 
+interface UpdateWorkspaceResponse {
+  workspace: Workspace;
+}
+
 export default function WorkspaceList() {
   const [workspaceList, setWorkspaceList] = useState<Workspace[]>([]);
 
@@ -27,6 +31,9 @@ export default function WorkspaceList() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [apiErrorMessage, setApiErrorMessage] = useState<string>("");
+
+  const [editName, setEditName] = useState<string>("");
+  const [editRole, setEditRole] = useState<RoleType>("MEMBER");
 
   useEffect(() => {
     async function fetchWorkspaces() {
@@ -53,6 +60,8 @@ export default function WorkspaceList() {
 
   function handleSelect(workspace: Workspace) {
     setSelectedWorkspace(workspace);
+    setEditName(workspace.name);
+    setEditRole(workspace.role);
   }
 
   async function handleDelete(workspace: Workspace) {
@@ -93,6 +102,51 @@ export default function WorkspaceList() {
     if (isFilterRole(value)) {
       setFilterRole(value);
       setSelectedWorkspace(null);
+    }
+  }
+
+  async function handleEdit() {
+    const name = editName.trim();
+
+    if (selectedWorkspace === null) {
+      setErrorMessage("워크스페이스 선택해주세요.");
+      return;
+    }
+
+    if (name === "") {
+      setErrorMessage("워크스페이스 이름을 입력해주세요.");
+      return;
+    }
+
+    setErrorMessage(null);
+
+    try {
+      const response = await fetch(`/api/workspaces/${selectedWorkspace.id}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ name, role: editRole }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to update workspace");
+      }
+
+      const data: UpdateWorkspaceResponse = await response.json();
+
+      setWorkspaceList(prev =>
+        prev.map(workspace =>
+          workspace.id === data.workspace.id
+            ? data.workspace
+            : workspace
+        ));
+
+      setEditName("");
+      setEditRole("MEMBER");
+      setSelectedWorkspace(null);
+    } catch {
+      setApiErrorMessage("워크스페이스 변경에 실패했습니다.");
     }
   }
 
@@ -188,6 +242,28 @@ export default function WorkspaceList() {
       <div>
         선택된 워크스페이스: {selectedWorkspace ? `${selectedWorkspace.name}` : '없음'}
       </div>
+      {
+        selectedWorkspace && (
+          <div>
+            <div>수정 이름: [<input type="text" value={editName} onChange={(e) => setEditName(e.currentTarget.value)} />]</div>
+            <div>수정 역할: [<select value={editRole} onChange={(e) => {
+              const value = e.currentTarget.value;
+
+              if (isRoleType(value)) {
+                setEditRole(value);
+              }
+            }}>
+              <option value="OWNER">OWNER</option>
+              <option value="ADMIN">ADMIN</option>
+              <option value="MEMBER">MEMBER</option>
+            </select>]
+              <button type="button" onClick={handleEdit}>
+                수정
+              </button>
+            </div>
+          </div>
+        )
+      }
       <div className="flex gap-2">
         <select value={filterRole} onChange={handleChange}>
           {
