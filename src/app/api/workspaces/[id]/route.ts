@@ -19,10 +19,47 @@ export async function PATCH(
     );
   }
 
-  const body = await request.json();
-  const name = typeof body.name === "string" ? body.name.trim() : "";
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return Response.json(
+      { message: "잘못된 요청입니다." },
+      { status: 400 }
+    );
+  }
 
-  if (name !== "" && isRoleType(body.role)) {
+  if (typeof body !== "object" || body === null) {
+    return Response.json(
+      { message: "잘못된 요청입니다." },
+      { status: 400 }
+    );
+  }
+
+  if (!("name" in body) || typeof body.name !== "string") {
+    return Response.json(
+      { message: "잘못된 요청입니다." },
+      { status: 400 }
+    );
+  }
+
+  const name = body.name.trim();
+
+  if (!("role" in body) || typeof body.role !== "string") {
+    return Response.json(
+      { message: "잘못된 요청입니다." },
+      { status: 400 }
+    );
+  }
+
+  if (name === "" || !isRoleType(body.role)) {
+    return Response.json(
+      { message: "잘못된 요청입니다." },
+      { status: 400 }
+    );
+  }
+
+  try {
     const workspace = await prisma.workspace.findUnique({
       where: {
         id: workspaceId
@@ -50,12 +87,12 @@ export async function PATCH(
       { workspace: updatedWorkspace },
       { status: 200 }
     );
+  } catch {
+    return Response.json(
+      { message: "서버 오류가 발생했습니다." },
+      { status: 500 }
+    );
   }
-
-  return Response.json(
-    { message: "잘못된 요청입니다." },
-    { status: 400 }
-  );
 }
 
 export async function DELETE(
@@ -72,26 +109,33 @@ export async function DELETE(
     );
   }
 
-  const workspace = await prisma.workspace.findUnique({
-    where: {
-      id: workspaceId
-    }
-  });
+  try {
+    const workspace = await prisma.workspace.findUnique({
+      where: {
+        id: workspaceId
+      }
+    });
 
-  if (!workspace) {
+    if (!workspace) {
+      return Response.json(
+        { message: "워크스페이스를 찾을 수 없습니다." },
+        { status: 404 }
+      );
+    }
+
+    await prisma.workspace.delete({
+      where: {
+        id: workspace.id
+      }
+    });
+
+    return Response.json({
+      message: "워크스페이스가 삭제되었습니다.",
+    });
+  } catch {
     return Response.json(
-      { message: "워크스페이스를 찾을 수 없습니다." },
-      { status: 404 }
+      { message: "서버 오류가 발생했습니다." },
+      { status: 500 }
     );
   }
-
-  await prisma.workspace.delete({
-    where: {
-      id: workspace.id
-    }
-  });
-
-  return Response.json({
-    message: "워크스페이스가 삭제되었습니다.",
-  });
 }

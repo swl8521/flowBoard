@@ -43,13 +43,18 @@ export default function WorkspaceList() {
       try {
         const response = await fetch("/api/workspaces");
         if (!response.ok) {
-          throw new Error("Failed to fetch workspaces");
+          const data = await response.json();
+          throw new Error(data.message);
         }
 
         const data: WorkspaceResponse = await response.json();
         setWorkspaceList(data.workspaces);
-      } catch {
-        setApiErrorMessage("워크스페이스를 불러오지 못했습니다.");
+      } catch (error) {
+        if (error instanceof Error) {
+          setApiErrorMessage(error.message);
+        } else {
+          setApiErrorMessage("알 수 없는 오류가 발생했습니다.");
+        }
       } finally {
         setIsLoading(false);
       }
@@ -73,15 +78,20 @@ export default function WorkspaceList() {
       });
 
       if (!response.ok) {
-        throw new Error("Failed to delete workspace");
+        const data = await response.json();
+        throw new Error(data.message);
       }
 
       setWorkspaceList(prev => prev.filter((w) => w.id !== workspace.id));
       if (selectedWorkspace?.id === workspace.id) {
         setSelectedWorkspace(null);
       }
-    } catch {
-      setApiErrorMessage("워크스페이스를 삭제하지 못했습니다.");
+    } catch (error) {
+      if (error instanceof Error) {
+        setApiErrorMessage(error.message);
+      } else {
+        setApiErrorMessage("알 수 없는 오류가 발생했습니다.");
+      }
     }
   }
 
@@ -130,7 +140,8 @@ export default function WorkspaceList() {
       });
 
       if (!response.ok) {
-        throw new Error("Failed to update workspace");
+        const data = await response.json();
+        throw new Error(data.message);
       }
 
       const data: UpdateWorkspaceResponse = await response.json();
@@ -145,8 +156,12 @@ export default function WorkspaceList() {
       setEditName("");
       setEditRole("MEMBER");
       setSelectedWorkspace(null);
-    } catch {
-      setApiErrorMessage("워크스페이스 변경에 실패했습니다.");
+    } catch (error) {
+      if (error instanceof Error) {
+        setApiErrorMessage(error.message);
+      } else {
+        setApiErrorMessage("알 수 없는 오류가 발생했습니다.");
+      }
     }
   }
 
@@ -180,6 +195,7 @@ export default function WorkspaceList() {
     }
 
     setErrorMessage(null);
+    setApiErrorMessage("");
 
     try {
       const response = await fetch("/api/workspaces", {
@@ -191,7 +207,8 @@ export default function WorkspaceList() {
       });
 
       if (!response.ok) {
-        throw new Error("Failed to create workspace");
+        const data = await response.json();
+        throw new Error(data.message);
       }
 
       const data: CreateWorkspaceResponse = await response.json();
@@ -202,8 +219,12 @@ export default function WorkspaceList() {
 
       setWorkspaceName("");
       setWorkspaceRole("MEMBER");
-    } catch {
-      setApiErrorMessage("워크스페이스 생성에 실패했습니다.");
+    } catch (error) {
+      if (error instanceof Error) {
+        setApiErrorMessage(error.message);
+      } else {
+        setApiErrorMessage("알 수 없는 오류가 발생했습니다.");
+      }
     }
   }
 
