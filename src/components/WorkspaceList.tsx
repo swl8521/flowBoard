@@ -3,6 +3,7 @@
 import type { Workspace, RoleType } from "@/types/workspace";
 import { useState, useEffect } from "react";
 import WorkspaceItem from "@/components/WorkspaceItem";
+import { isRoleType } from "@/lib/workspace";
 
 type FilterRole = RoleType | "ALL";
 
@@ -97,14 +98,6 @@ export default function WorkspaceList() {
 
   function isFilterRole(value: string): value is FilterRole {
     return filterRoles.includes(value as FilterRole);
-  }
-
-  function isRoleType(value: string): value is RoleType {
-    return (
-      value === "OWNER" ||
-      value === "ADMIN" ||
-      value === "MEMBER"
-    );
   }
 
   function handleChange(e: React.ChangeEvent<HTMLSelectElement>) {

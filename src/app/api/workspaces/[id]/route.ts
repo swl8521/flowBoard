@@ -1,9 +1,7 @@
 import prisma from "@/lib/prisma";
+import { errorResponse } from "@/lib/api";
 import type { RoleType } from "@/types/workspace";
-
-function isRoleType(value: unknown): value is RoleType {
-  return value === "OWNER" || value === "ADMIN" || value === "MEMBER";
-}
+import { isRoleType } from "@/lib/workspace";
 
 export async function PATCH(
   request: Request,
@@ -13,50 +11,32 @@ export async function PATCH(
   const workspaceId = Number(id);
 
   if (Number.isNaN(workspaceId)) {
-    return Response.json(
-      { message: "잘못된 요청입니다." },
-      { status: 400 }
-    );
+    return errorResponse("잘못된 요청입니다.", 400);
   }
 
   let body: unknown;
   try {
     body = await request.json();
   } catch {
-    return Response.json(
-      { message: "잘못된 요청입니다." },
-      { status: 400 }
-    );
+    return errorResponse("잘못된 요청입니다.", 400);
   }
 
   if (typeof body !== "object" || body === null) {
-    return Response.json(
-      { message: "잘못된 요청입니다." },
-      { status: 400 }
-    );
+    return errorResponse("잘못된 요청입니다.", 400);
   }
 
   if (!("name" in body) || typeof body.name !== "string") {
-    return Response.json(
-      { message: "잘못된 요청입니다." },
-      { status: 400 }
-    );
+    return errorResponse("잘못된 요청입니다.", 400);
   }
 
   const name = body.name.trim();
 
   if (!("role" in body) || typeof body.role !== "string") {
-    return Response.json(
-      { message: "잘못된 요청입니다." },
-      { status: 400 }
-    );
+    return errorResponse("잘못된 요청입니다.", 400);
   }
 
   if (name === "" || !isRoleType(body.role)) {
-    return Response.json(
-      { message: "잘못된 요청입니다." },
-      { status: 400 }
-    );
+    return errorResponse("잘못된 요청입니다.", 400);
   }
 
   try {
@@ -67,10 +47,7 @@ export async function PATCH(
     });
 
     if (!workspace) {
-      return Response.json(
-        { message: "워크스페이스를 찾을 수 없습니다." },
-        { status: 404 }
-      );
+      return errorResponse("워크스페이스를 찾을 수 없습니다.", 404);
     }
 
     const updatedWorkspace = await prisma.workspace.update({
@@ -88,10 +65,7 @@ export async function PATCH(
       { status: 200 }
     );
   } catch {
-    return Response.json(
-      { message: "서버 오류가 발생했습니다." },
-      { status: 500 }
-    );
+    return errorResponse("서버 오류가 발생했습니다.", 500);
   }
 }
 
@@ -103,10 +77,7 @@ export async function DELETE(
   const workspaceId = Number(id);
 
   if (Number.isNaN(workspaceId)) {
-    return Response.json(
-      { message: "잘못된 요청입니다." },
-      { status: 400 }
-    );
+    return errorResponse("잘못된 요청입니다.", 400);
   }
 
   try {
@@ -117,10 +88,7 @@ export async function DELETE(
     });
 
     if (!workspace) {
-      return Response.json(
-        { message: "워크스페이스를 찾을 수 없습니다." },
-        { status: 404 }
-      );
+      return errorResponse("워크스페이스를 찾을 수 없습니다.", 404);
     }
 
     await prisma.workspace.delete({
@@ -133,9 +101,6 @@ export async function DELETE(
       message: "워크스페이스가 삭제되었습니다.",
     });
   } catch {
-    return Response.json(
-      { message: "서버 오류가 발생했습니다." },
-      { status: 500 }
-    );
+    return errorResponse("서버 오류가 발생했습니다.", 500);
   }
 }
