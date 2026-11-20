@@ -1,4 +1,5 @@
 import type { Workspace } from "@/types/workspace";
+import Link from "next/link";
 
 interface WorkspaceItemProps {
   workspace: Workspace;
@@ -21,7 +22,10 @@ export default function WorkspaceItem({ workspace, showRole = true, onSelect, on
 
   return (
     <div>
-      {workspace.name}{showRole ? ` (${workspace.role})` : ''} <button onClick={handleClick}>선택</button> {isSelected ? '← 선택됨' : ''} <button onClick={handleDeleteClick}>삭제</button>
+      <Link href={`/workspaces/${workspace.id}`}>
+        {workspace.name}
+      </Link>
+      {showRole ? ` (${workspace.role})` : ''} <button onClick={handleClick}>선택</button> {isSelected ? '← 선택됨' : ''} <button onClick={handleDeleteClick}>삭제</button>
     </div>
   )
 }
